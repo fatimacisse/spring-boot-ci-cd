@@ -9,14 +9,27 @@ pipeline {
         SONAR_TOKEN = credentials('JENKINS_TOKEN_SONAR') // Token SonarCloud (exemple)
         SLACK_WEBHOOK = credentials('TOKEN_SLACK') // URL webhook Slack (exemple)
  	DOCKERHUB_AUTH = credentials('DOCKERHUB_AUTH') // Credential DockerHub combiné
+ 	BRANCH_NAME = '' // Initialise la variable
     }
     stages {
+	stage('Définir BRANCH_NAME') {
+            steps {
+                script {
+                    // Utilisation de Git pour extraire la branche
+                    BRANCH_NAME = sh(
+                        script: 'git rev-parse --abbrev-ref HEAD',
+                        returnStdout: true
+                    ).trim()
+                    echo "La branche détectée est : ${BRANCH_NAME}"
+                }
+            }
+        }
         stage('Tests Automatisés') {
             steps {
                 script {
                     // Gestion des branches selon Gitflow
-                    if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'develop') {
-                        echo "Branche actuelle : ${env.BRANCH_NAME}"
+                    if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
+                        echo "Branche actuelle : ${BRANCH_NAME}"
                         echo 'Exécution des tests unitaires...'
                         sh 'mvn test' // Tests unitaires
 
@@ -24,7 +37,7 @@ pipeline {
                         sh 'mvn verify' // Tests d'intégration
                     } else {
                         echo "Tests Automatisés exécutés uniquement pour les branches main et develop."
-                        echo "Branche actuelle : ${env.BRANCH_NAME}"
+                        echo "Branche actuelle : ${BRANCH_NAME}"
                     }
                 }
             }
@@ -32,8 +45,8 @@ pipeline {
 	stage('Vérification de la Qualité de Code') {
             steps {
                 script {
-                    if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'develop') {
-                        echo "Branche actuelle : ${env.BRANCH_NAME}"
+                    if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
+                        echo "Branche actuelle : ${BRANCH_NAME}"
                         echo 'Analyse statique du code avec SonarCloud (en utilisant sonar-project.properties)...'
                         sh """
                             mvn sonar:sonar \
@@ -48,14 +61,14 @@ pipeline {
 	stage('Compilation et Packaging') {
             steps {
                 script {
-               	    if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'develop') {
-                        echo "Branche actuelle : ${env.BRANCH_NAME}"
+               	    if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
+                        echo "Branche actuelle : ${BRANCH_NAME}"
                         echo 'Compilation et génération du package...'
                         sh 'mvn clean package' // Fichier JAR/WAR
 
                         echo 'Création de l\'image Docker...'
                         sh """
-                            docker build -t $DOCKERHUB_AUTH_USR/spring-boot-ci-cd:${env.BRANCH_NAME} .
+                            docker build -t $DOCKERHUB_AUTH_USR/spring-boot-ci-cd:${BRANCH_NAME} .
                         """
 
                         echo 'Connexion à DockerHub...'
@@ -65,7 +78,7 @@ pipeline {
 
                         echo 'Envoi de l\'image Docker vers DockerHub...'
                         sh """
-                            docker push $DOCKERHUB_AUTH_USR/spring-boot-ci-cd:${env.BRANCH_NAME}
+                            docker push $DOCKERHUB_AUTH_USR/spring-boot-ci-cd:${BRANCH_NAME}
                         """
                     } else {
                         echo "Compilation et Packaging exécutés uniquement pour les branches main et develop."
@@ -76,8 +89,8 @@ pipeline {
 	stage('Diagnostic') {
     	    steps {
                script {
-                       echo "DEBUG - BRANCH_NAME: ${env.BRANCH_NAME}"
-                       sh "echo 'Branche active : ${env.BRANCH_NAME}'"
+                       echo "DEBUG - BRANCH_NAME: ${BRANCH_NAME}"
+                       sh "echo 'Branche active : ${BRANCH_NAME}'"
       		       }
                   }
                           }
