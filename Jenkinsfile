@@ -9,59 +9,48 @@ pipeline {
         SONAR_TOKEN = credentials('JENKINS_TOKEN_SONAR') // Token SonarCloud (exemple)
         SLACK_WEBHOOK = credentials('TOKEN_SLACK') // URL webhook Slack (exemple)
  	DOCKERHUB_AUTH = credentials('DOCKERHUB_AUTH') // Credential DockerHub combiné
- 	BRANCH_NAME = '' // Initialise la variable
+	BRANCH_NAME = develop
+ 	
     }
     stages {
-	stage('Définir BRANCH_NAME') {
-            steps {
-                script {
-                    // Utilisation de Git pour extraire la branche
-                    BRANCH_NAME = sh(
-    		    script: 'git symbolic-ref --short HEAD || git rev-parse --short HEAD',
-   		    returnStdout: true
-		    ).trim()
-                    echo "La branche détectée est : ${BRANCH_NAME}"
-                }
-            }
-        }
         stage('Tests Automatisés') {
             steps {
                 script {
                     // Gestion des branches selon Gitflow
-                    if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
+                  //  if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
                         echo "Branche actuelle : ${BRANCH_NAME}"
                         echo 'Exécution des tests unitaires...'
                         sh 'mvn test' // Tests unitaires
 
                         echo 'Exécution des tests d\'intégration...'
                         sh 'mvn verify' // Tests d'intégration
-                    } else {
+                   // } else {
                         echo "Tests Automatisés exécutés uniquement pour les branches main et develop."
                         echo "Branche actuelle : ${BRANCH_NAME}"
-                    }
+                   // }
                 }
             }
         }
 	stage('Vérification de la Qualité de Code') {
             steps {
                 script {
-                    if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
+                   // if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
                         echo "Branche actuelle : ${BRANCH_NAME}"
                         echo 'Analyse statique du code avec SonarCloud (en utilisant sonar-project.properties)...'
                         sh """
                             mvn sonar:sonar \
                             -Dsonar.login=$SONAR_TOKEN
                         """
-                    } else {
+                   // } else {
                         echo "L'analyse de Qualité de Code n'est exécutée que pour les branches main et develop."
-                    }
+                   // }
                 }
             }
         }
 	stage('Compilation et Packaging') {
             steps {
                 script {
-               	    if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
+               	   // if (BRANCH_NAME == 'main' || BRANCH_NAME == 'develop') {
                         echo "Branche actuelle : ${BRANCH_NAME}"
                         echo 'Compilation et génération du package...'
                         sh 'mvn clean package' // Fichier JAR/WAR
@@ -80,22 +69,12 @@ pipeline {
                         sh """
                             docker push $DOCKERHUB_AUTH_USR/spring-boot-ci-cd:${BRANCH_NAME}
                         """
-                    } else {
+                   // } else {
                         echo "Compilation et Packaging exécutés uniquement pour les branches main et develop."
-                    }
+                   // }
                 }
             }
         }
-	stage('Diagnostic') {
-    	    steps {
-               script {
-                       echo "DEBUG - BRANCH_NAME: ${BRANCH_NAME}"
-                       sh "echo 'Branche active : ${BRANCH_NAME}'"
-		       echo "DEBUG - BRANCH_NAME: ${BRANCH_NAME}"
-		       sh "git branch"
-      		       }
-                  }
-                          }
     }
 }
 
