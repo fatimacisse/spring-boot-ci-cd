@@ -9,7 +9,7 @@ pipeline {
         SONAR_TOKEN = credentials('JENKINS_TOKEN_SONAR') // Token SonarCloud (exemple)
         SLACK_WEBHOOK = credentials('TOKEN_SLACK') // URL webhook Slack (exemple)
  	DOCKERHUB_AUTH = credentials('DOCKERHUB_AUTH') // Credential DockerHub combiné
-	BRANCH_NAME = develop
+	BRANCH_NAME = 'develop'
  	
     }
     stages {
