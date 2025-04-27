@@ -73,6 +73,14 @@ pipeline {
                 }
             }
         }
+	stage('Diagnostic') {
+    	    steps {
+               script {
+                       echo "DEBUG - BRANCH_NAME: ${env.BRANCH_NAME}"
+                       sh "echo 'Branche active : ${env.BRANCH_NAME}'"
+      		       }
+                  }
+                          }
     }
 }
 
