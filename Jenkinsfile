@@ -17,9 +17,9 @@ pipeline {
                 script {
                     // Utilisation de Git pour extraire la branche
                     BRANCH_NAME = sh(
-                        script: 'git rev-parse --abbrev-ref HEAD',
-                        returnStdout: true
-                    ).trim()
+    		    script: 'git symbolic-ref --short HEAD || git rev-parse --short HEAD',
+   		    returnStdout: true
+		    ).trim()
                     echo "La branche détectée est : ${BRANCH_NAME}"
                 }
             }
@@ -91,6 +91,8 @@ pipeline {
                script {
                        echo "DEBUG - BRANCH_NAME: ${BRANCH_NAME}"
                        sh "echo 'Branche active : ${BRANCH_NAME}'"
+		       echo "DEBUG - BRANCH_NAME: ${BRANCH_NAME}"
+		       sh "git branch"
       		       }
                   }
                           }
